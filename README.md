@@ -15,5 +15,6 @@ A Flask-based web application for face recognition in videos and photos. It dete
 ## Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/PSU-314/face-recognition-app.git
-   cd face-recognition-app
+   git clone https://github.com/PSU-314/SusDetector.git
+
+   cd SusDetector
