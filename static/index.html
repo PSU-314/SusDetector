@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; }
+        .section { background-color: white; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
+        .error-message { color: #dc2626; font-size: 0.875rem; }
+        .success-message { color: #16a34a; font-size: 0.875rem; }
+        .loading-spinner { display: none; border-top-color: transparent; }
+        .loading-spinner.active { display: inline-block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        img { max-width: 100px; height: auto; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-4xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Face Recognition App</h1>
+        
+        <div class="section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Video Processing: Upload Reference Images & Video</h2>
+            <form id="videoForm" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="videoReferenceImage" class="block text-sm font-medium text-gray-700">Reference Images (JPEG/PNG, multiple allowed)</label>
+                    <input type="file" id="videoReferenceImage" name="referenceImage" accept="image/*" multiple
+                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <div>
+                    <label for="videoFile" class="block text-sm font-medium text-gray-700">Video File (MP4 recommended)</label>
+                    <input type="file" id="videoFile" name="videoFile" accept="video/*" required
+                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <button type="submit" id="videoUploadButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-200">
+                    <span class="loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                    Upload and Process Video
+                </button>
+            </form>
+            <div id="videoError" class="mt-2 hidden">
+                <p class="error-message"></p>
+            </div>
+            <div id="videoSuccess" class="mt-2 hidden">
+                <p class="success-message"></p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Photo Matching: Upload Reference Images & Photos</h2>
+            <form id="photoForm" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="photoReferenceImage" class="block text-sm font-medium text-gray-700">Reference Images (JPEG/PNG, multiple allowed)</label>
+                    <input type="file" id="photoReferenceImage" name="referenceImage" accept="image/*" multiple
+                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <div>
+                    <label for="photoFiles" class="block text-sm font-medium text-gray-700">Photos (JPEG/PNG, multiple allowed)</label>
+                    <input type="file" id="photoFiles" name="photoFiles" accept="image/*" multiple required
+                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <button type="submit" id="photoUploadButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-200">
+                    <span class="loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                    Upload and Process Photos
+                </button>
+            </form>
+            <div id="photoError" class="mt-2 hidden">
+                <p class="error-message"></p>
+            </div>
+            <div id="photoSuccess" class="mt-2 hidden">
+                <p class="success-message"></p>
+            </div>
+        </div>
+
+        <div class="section">
+            <button id="clearButton" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-200">
+                <span class="loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                Clear All Data
+            </button>
+        </div>
+
+        <div class="section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Video Detections</h2>
+            <table id="eventsTable">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Name</th>
+                        <th>Timestamp</th>
+                        <th>Thumbnail</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Matching Photos</h2>
+            <table id="photosTable">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Thumbnail</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const videoForm = document.getElementById('videoForm');
+        const photoForm = document.getElementById('photoForm');
+        const videoError = document.getElementById('videoError');
+        const videoSuccess = document.getElementById('videoSuccess');
+        const photoError = document.getElementById('photoError');
+        const photoSuccess = document.getElementById('photoSuccess');
+        const eventsTableBody = document.querySelector('#eventsTable tbody');
+        const photosTableBody = document.querySelector('#photosTable tbody');
+        const videoUploadButton = document.getElementById('videoUploadButton');
+        const photoUploadButton = document.getElementById('photoUploadButton');
+        const clearButton = document.getElementById('clearButton');
+        const videoSpinner = videoUploadButton.querySelector('.loading-spinner');
+        const photoSpinner = photoUploadButton.querySelector('.loading-spinner');
+        const clearSpinner = clearButton.querySelector('.loading-spinner');
+
+        videoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            videoUploadButton.disabled = true;
+            videoSpinner.classList.add('active');
+            videoError.classList.add('hidden');
+            videoSuccess.classList.add('hidden');
+            eventsTableBody.innerHTML = '';
+
+            const formData = new FormData(videoForm);
+
+            try {
+                const response = await fetch('/upload_video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    videoSuccess.querySelector('.success-message').textContent = result.message || 'Video processed successfully!';
+                    videoSuccess.classList.remove('hidden');
+                    displayEvents(result.events);
+                } else {
+                    videoError.querySelector('.error-message').textContent = result.error || 'Unknown error occurred.';
+                    videoError.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Video upload error:', error);
+                videoError.querySelector('.error-message').textContent = 'Network error. Check console and try again.';
+                videoError.classList.remove('hidden');
+            } finally {
+                videoUploadButton.disabled = false;
+                videoSpinner.classList.remove('active');
+            }
+        });
+
+        photoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            photoUploadButton.disabled = true;
+            photoSpinner.classList.add('active');
+            photoError.classList.add('hidden');
+            photoSuccess.classList.add('hidden');
+            photosTableBody.innerHTML = '';
+
+            const formData = new FormData(photoForm);
+
+            try {
+                const response = await fetch('/upload_photos', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    photoSuccess.querySelector('.success-message').textContent = result.message || 'Photos processed successfully!';
+                    photoSuccess.classList.remove('hidden');
+                    displayMatchingPhotos(result.matching_photos);
+                } else {
+                    photoError.querySelector('.error-message').textContent = result.error || 'Unknown error occurred.';
+                    photoError.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Photo upload error:', error);
+                photoError.querySelector('.error-message').textContent = 'Network error. Check console and try again.';
+                photoError.classList.remove('hidden');
+            } finally {
+                photoUploadButton.disabled = false;
+                photoSpinner.classList.remove('active');
+            }
+        });
+
+        clearButton.addEventListener('click', async () => {
+            clearButton.disabled = true;
+            clearSpinner.classList.add('active');
+            videoError.classList.add('hidden');
+            videoSuccess.classList.add('hidden');
+            photoError.classList.add('hidden');
+            photoSuccess.classList.add('hidden');
+            eventsTableBody.innerHTML = '';
+            photosTableBody.innerHTML = '';
+
+            try {
+                const response = await fetch('/clear', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    videoSuccess.querySelector('.success-message').textContent = result.message || 'Data cleared successfully!';
+                    videoSuccess.classList.remove('hidden');
+                } else {
+                    videoError.querySelector('.error-message').textContent = result.error || 'Unknown error occurred.';
+                    videoError.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Clear error:', error);
+                videoError.querySelector('.error-message').textContent = 'Network error. Check console and try again.';
+                videoError.classList.remove('hidden');
+            } finally {
+                clearButton.disabled = false;
+                clearSpinner.classList.remove('active');
+            }
+        });
+
+        function displayEvents(events) {
+            events.forEach(event => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>Detected</td>
+                    <td>${event.name}</td>
+                    <td>${event.timestamp}</td>
+                    <td><img src="${event.thumbnail}" alt="Detected thumbnail"></td>
+                `;
+                eventsTableBody.appendChild(row);
+            });
+        }
+
+        function displayMatchingPhotos(photos) {
+            photos.forEach(photo => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${photo.filename}</td>
+                    <td><img src="${photo.thumbnail}" alt="${photo.filename}"></td>
+                `;
+                photosTableBody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
