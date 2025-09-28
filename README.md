@@ -18,3 +18,6 @@ A Flask-based web application for face recognition in videos and photos. It dete
    git clone https://github.com/PSU-314/SusDetector.git
 
    cd SusDetector
+
+2. Insert the path of your cloned project folder in app.py
+
